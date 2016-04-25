@@ -22,9 +22,19 @@
       (usocket:socket-connect server 6667)
       (usocket:socket-connect server port)))
 
+(defun write-single-irc-line (stream line)
+  (write-string (concatenate 'string line '(#\return #\linefeed)) stream)
+  (force-output stream))
+
+(defmacro write-irc-line (stream &rest args)
+  `(write-single-irc-line stream (concatenate 'string ,@args)))
+
+(defun write-privmsg (stream nick msg)
+  (write-irc-line stream "PRIVMSG " nick " :" msg))
+
 (defun disconnect-from-irc-server (stream)
   (setf *served-nicks* '())
-  (write-irc-line stream (concatenate 'string "QUIT :quit")))
+  (write-irc-line stream "QUIT :quit"))
 
 (defun irc-privmsg-regex ()
   ":(.*)!(.*)@(.*)\\sPRIVMSG\\s(.*):(.*)")
@@ -51,7 +61,7 @@
 (defun handle-irc-line-connecting-state (stream line)
   (with-regex-matches ("004" line)
     (defparameter *state* #'handle-irc-line-connected-state)
-    (write-irc-line stream (concatenate 'string "JOIN " *channel*))
+    (write-irc-line stream "JOIN " *channel*)
     (format t "we're connected yeay!~%"))
 
   (with-regex-matches ("433" line)
@@ -66,22 +76,15 @@
 	 (filtered-line (string-trim '(#\Space #\Tab #\return #\linefeed) line)))
     (when line
       (with-regex-matches ("PING(.*)\\s(.*)" line)
-	(write-irc-line stream (concatenate 'string "PONG " (aref matches 1))))
+	(write-irc-line stream "PONG " (aref matches 1)))
      
       (funcall *state* stream filtered-line)
       (eval-irc-lines stream))))
 
-(defun write-irc-line (stream line)
-  (write-string (concatenate 'string line '(#\return #\linefeed)) stream)
-  (force-output stream))
-
-(defun write-privmsg (stream nick msg)
-  (write-irc-line stream (concatenate 'string "PRIVMSG " nick " :" msg)))
-
 (defun irc-tryout ()
   (with-connected-irc-socket ("irc.inet.tele.dk")
-    (write-irc-line stream (concatenate 'string "NICK " +nickname+))
-    (write-irc-line stream (concatenate 'string "USER " +nickname+ " 8 * " +nickname+))
+    (write-irc-line stream "NICK " +nickname+)
+    (write-irc-line stream "USER " +nickname+ " 8 * " +nickname+)
     (defparameter *state* #'handle-irc-line-connecting-state)
     (eval-irc-lines stream)))
 
