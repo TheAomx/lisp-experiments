@@ -55,9 +55,20 @@
 	 (push nick *served-nicks*)
 	 (write-privmsg stream nick (concatenate 'string "hello " nick " this is the lisp bot, i'm now serving you...")))
 	(T
-	 (if (string-equal msg "quit")
-	     (disconnect-from-irc-server stream)
-	     (write-privmsg stream nick (concatenate 'string "are you sure that you " msg "?"))))))
+	 (cond ((string-equal msg "quit")
+		(disconnect-from-irc-server stream))
+	       (T
+		(with-regex-matches ("derive\\s(.*)\\s(.*)" msg)
+		  (let* ((equation (aref matches 0))
+			(variable (aref matches 1))
+			(request (list (quote com.theaomx.pattern-matcher::dd)
+					(read-from-string equation)
+					(read-from-string variable)))
+			(answer (com.theaomx.pattern-matcher:derive request)))
+		    (write-privmsg stream nick (concatenate 'string "i derive for you: " equation " after " variable))
+		    (write-privmsg stream nick (write-to-string answer))))
+		
+		(write-privmsg stream nick (concatenate 'string "are you sure that you " msg "?")))))))
 
 (defun handle-irc-line-connected-state (stream line)
   (with-regex-matches ((irc-privmsg-regex) line)
@@ -97,6 +108,6 @@
     (eval-irc-lines stream)))
 
 (defun deriver-test ()
-  (let ((test '(com.theaomx.pattern-matcher::dd (* 2 (* 2 x)) x)))
+  (let ((test '(com.theaomx.pattern-matcher::dd (* 2 (* 4 x)) x)))
     (print (symbol-package (car test)))
     (com.theaomx.pattern-matcher:derive test)))
