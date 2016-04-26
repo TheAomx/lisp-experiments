@@ -1,6 +1,8 @@
+(in-package #:cl-user)
 (defpackage :com.theaomx.pattern-matcher
   (:use :common-lisp)
-  (:export :simplifier))
+  (:export :simplifier
+	   :derive))
 
 (in-package :com.theaomx.pattern-matcher)
 
@@ -181,28 +183,29 @@
 		    (map 'list #'simplify-exp exp)
 		    exp))))
       (simplify-exp expression))))
-      
 
-(defparameter *deriv-rules* '(
+(defun get-deriver-rules ()
+  '(
     ((dd (?c c) (? v))             0)
     ((dd (?v v) (? v))             1)
     ((dd (?v u) (? v))             0)
     ((dd (+ (? x1) (? x2)) (? v))  (+ (dd (q x1) (q v))
-                                      (dd (q x2) (q v))))
+				    (dd (q x2) (q v))))
     ((dd (* (? x1) (? x2)) (? v))  (+ (* (q x1) (dd (q x2) (q v)))
-                                      (* (dd (q x1) (q v)) (q x2))))
+				    (* (dd (q x1) (q v)) (q x2))))
     ((dd (** (? x) (?c n)) (? v))  (* (* (q n) (+ (q x) (q (- n 1))))
-                                   (dd (q x) (q v))))
-))
+				    (dd (q x) (q v))))
+    ))
 
-(defparameter *algebra-rules* '(
+(defun get-algebra-rules ()
+  '(
     (((? op) (?c c1) (?c c2))                     (q (op c1 c2)))
     (((? op) (?  e ) (?c c))                      ((q op) (q c) (q e)))
     ((+ 0 (? e))                                  (q e))
     ((* 1 (? e))                                  (q e))
     ((* 0 (? e))                                  0)
     ((+ (? p1) (? p1))                            (* 2 (q p1)))
-    ((+ (* (?c c1) (? e)) (* (?c c2) (? e)))      (* (q (+ c1 c2)) (q e)))
+					;((+ (* (?c c1) (? e)) (* (?c c2) (? e)))      (* (q (+ c1 c2)) (q e)))
     ((* (?c c1) (* (?c c2) (? e )))               (* (q (* c1 c2)) (q e)))
     ((* (?  e1) (* (?c c ) (? e2)))               (* (q c ) (* (q e1) (q e2))))
     ((* (* (? e1) (? e2)) (? e3))                 (* (q e1) (* (q e2) (q e3))))
@@ -211,17 +214,19 @@
     ((+ (+ (? e1) (? e2)) (? e3))                 (+ (q e1) (+ (q e2) (q e3))))
     ((+ (* (?c c1) (? e)) (* (?c c2) (? e)))      (* (q (+ c1 c2)) (q e)))
     ((* (? e1) (+ (? e2) (? e3)))                 (+ (* (q e1) (q e2))))
-))
+    ))
+
+(defun derive (exp)
+  (let ((derive-rules (get-deriver-rules))
+	(algebra-rules (get-algebra-rules)))
+    (funcall 
+     (simplifier 
+      algebra-rules) 
+     (funcall
+      (simplifier 
+       derive-rules) 
+      exp))))
 
 
-(defun deriv (exp)
-  (funcall 
-   (simplifier 
-    *algebra-rules*) 
-   (funcall 
-    (simplifier 
-     *deriv-rules*) 
-    exp)))
-
-
-(deriv '(dd (* (* x x) (+ x x)) x))
+(com.theaomx.pattern-matcher:derive '(dd (* 2 (* 2 x)) x))
+(eval (read-from-string "(derive '(dd (* (* x x) (+ x x)) x))"))

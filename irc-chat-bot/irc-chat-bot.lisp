@@ -1,7 +1,15 @@
-(ql:quickload "usocket")
+(defpackage :com.theaomx.irc.chat-bot
+  (:use :common-lisp
+	:com.theaomx.pattern-matcher)
+  (:export :irc-tryout
+	   :deriver-test))
+
+(in-package :com.theaomx.irc.chat-bot)
+
+(ql:quickload :usocket)
 (ql:quickload :cl-ppcre)
 
-(defparameter +nickname+ "the-lispbot")
+(defparameter +nickname+ "second-the-lispbot")
 (defparameter *state* nil)
 (defparameter *channel* "#aomx")
 (defparameter *served-nicks* '())
@@ -88,3 +96,7 @@
     (defparameter *state* #'handle-irc-line-connecting-state)
     (eval-irc-lines stream)))
 
+(defun deriver-test ()
+  (let ((test '(com.theaomx.pattern-matcher::dd (* 2 (* 2 x)) x)))
+    (print (symbol-package (car test)))
+    (com.theaomx.pattern-matcher:derive test)))
