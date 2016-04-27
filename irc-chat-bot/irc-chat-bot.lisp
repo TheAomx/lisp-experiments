@@ -9,7 +9,7 @@
 (ql:quickload :usocket)
 (ql:quickload :cl-ppcre)
 
-(defparameter +nickname+ "second-the-lispbot")
+(defparameter +nickname+ "the-lispbot")
 (defparameter *state* nil)
 (defparameter *channel* "#aomx")
 (defparameter *served-nicks* '())
@@ -50,6 +50,25 @@
 (defun is-served-nick (nick)
   (member nick *served-nicks* :test #'string-equal))
 
+(defun prefix-to-infix (expr)
+  (if (atom expr)
+      expr
+      (list
+       (prefix-to-infix (cadr expr))
+       (car expr)
+       (prefix-to-infix (caddr expr)))))
+
+(defun handle-derive-request (stream nick equation variable)
+  (handler-case
+      (let* ((request (list (quote com.theaomx.pattern-matcher::dd)
+			    (read-from-string equation)
+			    (read-from-string variable)))
+	     (answer (com.theaomx.pattern-matcher:derive request)))
+	(write-privmsg stream nick (concatenate 'string "i derive for you: " equation " after " variable))
+	(write-privmsg stream nick (write-to-string (prefix-to-infix answer))))
+    (end-of-file () (write-privmsg stream nick "your term  was malformed!"))))
+  
+
 (defun handle-privmsg (stream nick msg)
   (cond ((not (is-served-nick nick))
 	 (push nick *served-nicks*)
@@ -59,14 +78,7 @@
 		(disconnect-from-irc-server stream))
 	       (T
 		(with-regex-matches ("derive\\s(.*)\\s(.*)" msg)
-		  (let* ((equation (aref matches 0))
-			(variable (aref matches 1))
-			(request (list (quote com.theaomx.pattern-matcher::dd)
-					(read-from-string equation)
-					(read-from-string variable)))
-			(answer (com.theaomx.pattern-matcher:derive request)))
-		    (write-privmsg stream nick (concatenate 'string "i derive for you: " equation " after " variable))
-		    (write-privmsg stream nick (write-to-string answer))))
+		  (handle-derive-request stream nick (aref matches 0) (aref matches 1)))
 		
 		(write-privmsg stream nick (concatenate 'string "are you sure that you " msg "?")))))))
 
@@ -108,6 +120,11 @@
     (eval-irc-lines stream)))
 
 (defun deriver-test ()
-  (let ((test '(com.theaomx.pattern-matcher::dd (* 2 (* 4 x)) x)))
+  (let ((test '(com.theaomx.pattern-matcher::dd (* (+ x x) (* x x)) x)))
     (print (symbol-package (car test)))
     (com.theaomx.pattern-matcher:derive test)))
+
+;(deriver-test)
+;(prefix-to-infix (deriver-test))
+
+
