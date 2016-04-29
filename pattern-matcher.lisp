@@ -2,7 +2,9 @@
 (defpackage :com.theaomx.pattern-matcher
   (:use :common-lisp)
   (:export :simplifier
-	   :derive))
+	   :derive
+	   :infix-to-prefix
+	   :prefix-to-infix))
 
 (in-package :com.theaomx.pattern-matcher)
 
@@ -230,3 +232,54 @@
 
 (com.theaomx.pattern-matcher:derive '(dd (* 2 (* 2 x)) x))
 (eval (read-from-string "(derive '(dd (* (* x x) (+ x x)) x))"))
+
+(defun prefix-to-infix (expr)
+  (cond ((atom expr)
+	 expr)
+	((= (length expr) 1)
+	 (prefix-to-infix (car expr)))
+	(T
+	 (list
+	  (prefix-to-infix (cadr expr))
+	  (car expr)
+	  (prefix-to-infix (caddr expr))))))
+
+(equal (prefix-to-infix '(1)) 1)
+(equal (prefix-to-infix '(+ 1 2))       '(1 + 2))
+(equal (prefix-to-infix '(+ (* x x) 2)) '((x * x) + 2))
+
+(define-condition malformed-infix-error (error)
+  ((text :initarg :text :reader text)))
+
+(defun infix-to-prefix (expr)
+  (labels ((op-1-found (x)
+	     (or (eq x '+) (eq x '-)))
+	   (op-2-found (x)
+	     (or (eq x '*) (eq x '/)))
+	   (split-if-found (pred expr)
+	     (let ((found (position-if pred expr)))
+	       (if (not (null found))
+		   (list (nth found expr)
+			 (infix-to-prefix (subseq expr 0 found))
+			 (infix-to-prefix (subseq expr (1+ found))))))))
+    
+    (cond ((atom expr)
+	   expr)
+	  ((= (length expr) 1)
+	   (infix-to-prefix (car expr)))
+	  ((member-if #'op-2-found expr)
+	   (split-if-found #'op-2-found expr))
+	  ((member-if #'op-1-found expr)
+	   (split-if-found #'op-1-found expr))
+	  (T
+	   (error 'malformed-infix-error :text "there was a problem while parsing")))))
+
+
+(equal (infix-to-prefix '(x))
+       'x)
+(equal (infix-to-prefix '(1 + x))
+			'(+ 1 x))
+(equal (infix-to-prefix '(x * 3 * 3 + 1))
+       '(* x (* 3 (+ 3 1))))
+
+(infix-to-prefix '((1 + 1) + (1 * x)))

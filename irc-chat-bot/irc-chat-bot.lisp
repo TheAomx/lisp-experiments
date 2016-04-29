@@ -50,14 +50,6 @@
 (defun is-served-nick (nick)
   (member nick *served-nicks* :test #'string-equal))
 
-(defun prefix-to-infix (expr)
-  (if (atom expr)
-      expr
-      (list
-       (prefix-to-infix (cadr expr))
-       (car expr)
-       (prefix-to-infix (caddr expr)))))
-
 (defun handle-derive-request (stream nick equation variable)
   (handler-case
       (let* ((request (list (quote com.theaomx.pattern-matcher::dd)
@@ -65,7 +57,9 @@
 			    (read-from-string variable)))
 	     (answer (com.theaomx.pattern-matcher:derive request)))
 	(write-privmsg stream nick (concatenate 'string "i derive for you: " equation " after " variable))
-	(write-privmsg stream nick (write-to-string (prefix-to-infix answer))))
+	(write-privmsg stream
+		       nick
+		       (write-to-string (com.theaomx.pattern-matcher:prefix-to-infix answer))))
     (end-of-file () (write-privmsg stream nick "your term  was malformed!"))))
   
 
@@ -124,7 +118,5 @@
     (print (symbol-package (car test)))
     (com.theaomx.pattern-matcher:derive test)))
 
-;(deriver-test)
-;(prefix-to-infix (deriver-test))
 
-
+;(com.theaomx.pattern-matcher:prefix-to-infix (deriver-test))
