@@ -206,16 +206,15 @@
     ((+ 0 (? e))                                  (q e))
     ((* 1 (? e))                                  (q e))
     ((* 0 (? e))                                  0)
-    ((+ (? p1) (? p1))                            (* 2 (q p1)))
-					;((+ (* (?c c1) (? e)) (* (?c c2) (? e)))      (* (q (+ c1 c2)) (q e)))
+    ;((+ (? p1) (? p1))                            (* 2 (q p1)))
     ((* (?c c1) (* (?c c2) (? e )))               (* (q (* c1 c2)) (q e)))
-    ((* (?  e1) (* (?c c ) (? e2)))               (* (q c ) (* (q e1) (q e2))))
+    ((* (?  e1) (* (?c c ) (? e2)))               (* (q c) (* (q e1) (q e2))))
     ((* (* (? e1) (? e2)) (? e3))                 (* (q e1) (* (q e2) (q e3))))
     ((+ (?c c1) (+ (?c c2) (? e )))               (+ (q (+ c1 c2)) (q e)))
     ((+ (?  e1) (+ (?c c ) (? e2)))               (+ (q c ) (+ (q e1) (q e2))))
     ((+ (+ (? e1) (? e2)) (? e3))                 (+ (q e1) (+ (q e2) (q e3))))
     ((+ (* (?c c1) (? e)) (* (?c c2) (? e)))      (* (q (+ c1 c2)) (q e)))
-    ((* (? e1) (+ (? e2) (? e3)))                 (+ (* (q e1) (q e2))))
+    ((* (? e1) (+ (? e2) (? e3)))                 (+ (* (q e1) (q e2)) (* (q e1) (q e3))))
     ))
 
 (defun derive (exp)
@@ -302,4 +301,10 @@
 
 (infix-to-prefix '(2 * x * x * x))
 
-(derive-infix '(2 * x * x) 'x)
+(infix-to-prefix '(2 * x * x * x))
+
+(funcall (simplifier (get-deriver-rules)) (list 'dd
+						(infix-to-prefix '(2 * x * x * x))
+						'x))
+
+(derive-infix '(2 * x * x * x) 'x)
