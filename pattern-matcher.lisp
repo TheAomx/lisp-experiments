@@ -267,10 +267,10 @@
 	   expr)
 	  ((= (length expr) 1)
 	   (infix-to-prefix (car expr)))
-	  ((member-if #'op-2-found expr)
-	   (split-if-found #'op-2-found expr))
 	  ((member-if #'op-1-found expr)
 	   (split-if-found #'op-1-found expr))
+	  ((member-if #'op-2-found expr)
+	   (split-if-found #'op-2-found expr))
 	  (T
 	   (error 'malformed-infix-error :text "there was a problem while parsing")))))
 
@@ -278,8 +278,28 @@
 (equal (infix-to-prefix '(x))
        'x)
 (equal (infix-to-prefix '(1 + x))
-			'(+ 1 x))
-(equal (infix-to-prefix '(x * 3 * 3 + 1))
-       '(* x (* 3 (+ 3 1))))
+       '(+ 1 x))
+(equal (infix-to-prefix '(1 * x))
+       '(* 1 x))
+(equal (infix-to-prefix
+	'(1 + 1 * 1 * 1))
+       '(+ 1 (* 1 (* 1 1))))
 
-(infix-to-prefix '((1 + 1) + (1 * x)))
+(equal (infix-to-prefix
+	'(1 * 1 + 1 * 1 + 1 * 1))
+       '(+ (* 1 1) (+ (* 1 1) (* 1 1))))
+
+(equal (infix-to-prefix '(4 * 3 * 3 + 1))
+       '(+ (* 4 (* 3 3)) 1))
+
+(infix-to-prefix '((1 + 1) + (1 * 2)))
+
+(defun derive-infix (infix-expr var)
+  (derive (list
+	   'dd
+	   (infix-to-prefix infix-expr)
+	   var)))
+
+(infix-to-prefix '(2 * x * x * x))
+
+(derive-infix '(2 * x * x) 'x)
