@@ -9,7 +9,7 @@
 (ql:quickload :usocket)
 (ql:quickload :cl-ppcre)
 
-(defparameter +nickname+ "the-lispbot")
+(defparameter +nickname+ "my-the-lispbot")
 (defparameter *state* nil)
 (defparameter *channel* "#aomx")
 (defparameter *served-nicks* '())
@@ -53,14 +53,15 @@
 (defun handle-derive-request (stream nick equation variable)
   (handler-case
       (let* ((request (list (quote com.theaomx.pattern-matcher::dd)
-			    (read-from-string equation)
+			    (com.theaomx.pattern-matcher:infix-to-prefix (read-from-string equation))
 			    (read-from-string variable)))
 	     (answer (com.theaomx.pattern-matcher:derive request)))
 	(write-privmsg stream nick (concatenate 'string "i derive for you: " equation " after " variable))
 	(write-privmsg stream
 		       nick
 		       (write-to-string (com.theaomx.pattern-matcher:prefix-to-infix answer))))
-    (end-of-file () (write-privmsg stream nick "your term  was malformed!"))))
+    (end-of-file () (write-privmsg stream nick "your term  was malformed!"))
+    (malformed-infix-error () (write-privmsg stream nick "conversion from infix to prefix failed!"))))
   
 
 (defun handle-privmsg (stream nick msg)
