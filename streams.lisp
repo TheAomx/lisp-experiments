@@ -4,11 +4,11 @@
 (defun empty-stream? (s)
     (eq s the-empty-stream))
 
-(defun cons-stream (x y)
-  (cons x (delay y)))
+(defmacro delay (x)
+  `(lambda () ,x))
 
-(defun delay (x)
-  (lambda () x))
+(defmacro cons-stream (x y)
+  `(cons ,x (delay ,y)))
 
 (defun force (x)
   (funcall x))
@@ -71,6 +71,17 @@
 	      '()
 	      stream))
 
+(defun print-stream (stream)
+  (when (not (empty-stream? stream))
+    (prin1 (head stream))
+    (format t " ")
+    (print-stream (tail stream))))
+
+(defun nth-stream (stream n)
+  (if (= n 0)
+      (head stream)
+      (nth-stream (tail stream) (- n 1))))
+
 ;; example usages of these streams...
 
 (defun fib (n)
@@ -79,14 +90,32 @@
       (setf temp sum1)
       (setf sum1 (+ sum1 sum2))
       (setf sum2 temp))))
-			  
+		  
 (defun odd-fibs (n)
   (stream-to-list
    (filter-stream
     #'oddp
     (map-stream #'fib (enum-interval 1 n)))))
 
-;(enum-interval 1 5)
-;(stream-to-list (filter-stream (lambda (x) (= (rem x 7) 0)) (enum-interval 1 100)))
-;(odd-fibs 50)
-;(funcall (car (cons (lambda () "hello") (lambda () "lol"))))
+(defun integers-from (n)
+  (cons-stream n (integers-from (1+ n))))
+
+(defun sieve (stream)
+  (flet ((divisible? (x y)
+	   (= (rem x y) 0)))
+    (cons-stream
+     (head stream)
+     (sieve (filter-stream
+	     (lambda (x)
+	       (not (divisible? x (head stream))))
+	     (tail stream)))))) 
+
+(defun primes ()
+  (sieve (integers-from 2)))
+
+(nth-stream (primes)
+	    2)
+
+(nth-stream (integers-from 1) 8)
+(stream-to-list (filter-stream (lambda (x) (= (rem x 3) 0)) (enum-interval 1 100)))
+(odd-fibs 50)
