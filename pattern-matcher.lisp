@@ -27,11 +27,12 @@
 	((v (assoc name dict)))
       (cond
 	((not v) (cons (list name dat) dict))
-	((eq (cadr v) dat) dict)
+	((equal (cadr v) dat) dict)
 	(T
 	 FAILED)))))
 
 (equal (extend-dict '(? x) '10 empty-dict)     '((x 10)))
+(equal (extend-dict '(? x) '(1 2 3) empty-dict) '((x (1 2 3))))
 (equal (extend-dict '(? x) '10 '((x 10)))      '((x 10)))
 (equal (extend-dict '(? x) '10 '((x 11)))      FAILED)
 
@@ -98,6 +99,7 @@
 (equal (match '* '* empty-dict)                             empty-dict)
 
 (equal (match '(? x) '10 empty-dict)                       '((x 10)))
+(equal (match '(? x) '(1 2 3) empty-dict)                  '((x (1 2 3))))
 (equal (match '(?c x) '10 empty-dict)                      '((x 10)))
 (equal (match '(?v x) '10 empty-dict)                       FAILED)
 (equal (match '(?v x) 'a empty-dict)                       '((x a)))
@@ -215,7 +217,6 @@
     ((+ (+ (? e1) (? e2)) (? e3))                 (+ (q e1) (+ (q e2) (q e3))))
     ((+ (* (?c c1) (? e)) (* (?c c2) (? e)))      (* (q (+ c1 c2)) (q e)))
     ((* (? e1) (+ (? e2) (? e3)))                 (+ (* (q e1) (q e2)) (* (q e1) (q e3))))
-    ((+ (* (?c c) (? e)) (* (?c c) (? e)))        (* (q (+ c c)) (q e)))
     ))
 
 (defun derive (exp)
@@ -232,6 +233,7 @@
 
 (com.theaomx.pattern-matcher:derive '(dd (* 2 (* 2 x)) x))
 (eval (read-from-string "(derive '(dd (* (* x x) (+ x x)) x))"))
+
 
 (defun prefix-to-infix (expr)
   (cond ((atom expr)
@@ -308,4 +310,4 @@
 						(infix-to-prefix '(2 * x * x * x))
 						'x))
 
-(derive-infix '(2 * x * x * x) 'x)
+(prefix-to-infix (derive-infix '(2 * x * x * x * x) 'x))
