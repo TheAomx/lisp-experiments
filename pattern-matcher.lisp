@@ -62,7 +62,17 @@
     (and (listp pat) (eq (car pat) '?v)))
 
 (defun variable? (pat)
-    (symbolp pat))
+  (symbolp pat))
+
+(defun arbitrary-operator? (pat)
+  (and (listp pat) (eql (car pat) '?op)))
+
+(defun operator? (pat)
+  (and (atom pat)
+       (or (eql pat '+)
+	   (eql pat '-)
+	   (eql pat '*)
+	   (eql pat '/))))
 
 (defun arbitrary-expression? (pat)
     (and (listp pat) (eq (car pat) '?)))
@@ -84,6 +94,10 @@
     ((arbitrary-variable? pat)
      (if (variable? exp)
 	 (extend-dict pat exp dict)      
+	 FAILED))
+    ((arbitrary-operator? pat)
+     (if (operator? exp)
+	 (extend-dict pat exp dict)
 	 FAILED))
     ((arbitrary-expression? pat)
      (extend-dict pat exp dict))
@@ -197,14 +211,18 @@
 				    (dd (q x2) (q v))))
     ((dd (* (? x1) (? x2)) (? v))  (+ (* (q x1) (dd (q x2) (q v)))
 				    (* (dd (q x1) (q v)) (q x2))))
-    ((dd (** (? x) (?c n)) (? v))  (* (* (q n) (+ (q x) (q (- n 1))))
+    ((dd (** (? x) (?c n)) (? v))  (* (* (q n) (** (q x) (q (- n 1))))
 				    (dd (q x) (q v))))
+    ((dd (ln (? x)) (? v))         (* (/ 1 (q x)) (dd (q x) (q v))))
     ))
+
+;(derive '(dd (** x 5) x))
+;(derive '(dd (ln (* x x)) x))
 
 (defun get-algebra-rules ()
   '(
-    (((? op) (?c c1) (?c c2))                     (q (op c1 c2)))
-    (((? op) (?  e ) (?c c))                      ((q op) (q c) (q e)))
+    (((?op op) (?c c1) (?c c2))                     (q (op c1 c2)))
+    (((?op op) (?  e ) (?c c))                      ((q op) (q c) (q e)))
     ((+ 0 (? e))                                  (q e))
     ((* 1 (? e))                                  (q e))
     ((* 0 (? e))                                  0)
@@ -306,8 +324,11 @@
 
 (infix-to-prefix '(2 * x * x * x))
 
-(funcall (simplifier (get-deriver-rules)) (list 'dd
-						(infix-to-prefix '(2 * x * x * x))
-						'x))
+(funcall
+ (simplifier (get-deriver-rules))
+ (list 'dd
+       (infix-to-prefix '(2 * x))
+       'x))
 
 (prefix-to-infix (derive-infix '(2 * x * x * x * x) 'x))
+
