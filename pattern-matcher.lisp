@@ -4,7 +4,9 @@
   (:export :simplifier
 	   :derive
 	   :infix-to-prefix
-	   :prefix-to-infix))
+	   :prefix-to-infix
+	   :algebraic-simplify
+	   :get-derive-expression))
 
 (in-package :com.theaomx.pattern-matcher)
 
@@ -247,6 +249,15 @@
       (simplifier 
        derive-rules) 
       exp))))
+
+(defun algebraic-simplify (expr)
+  (funcall
+   (simplifier
+    (get-algebra-rules))
+    expr))
+
+(defun get-derive-expression (expr var)
+  (list 'dd expr var))
 
 
 (com.theaomx.pattern-matcher:derive '(dd (* 2 (* 2 x)) x))
