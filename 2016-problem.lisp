@@ -11,7 +11,7 @@
 (defparameter ops `(,(function +) ,(function -) ,(function *) ,(function /)))
 
 ; returns true if solution candidate was fully search (e.g. numbers is a list of 1 element)
-(defun empty-solution-candidate? (s)
+(defun evaluated-solution-candidate? (s)
   (= (length (solution-candidate-numbers s)) 1))
 
 (defun eval-operator (operator num1 num2)
@@ -43,7 +43,7 @@
 (defun get-results-from-permutations (solution-candidate)
   (let ((nums (solution-candidate-numbers solution-candidate))
 	(operators (solution-candidate-operators solution-candidate)))
-    (cond ((empty-solution-candidate? solution-candidate)
+    (cond ((evaluated-solution-candidate? solution-candidate)
 	   (if (correct-solution? (car nums))
 	       solution-candidate))
 	  (T (map 'list
