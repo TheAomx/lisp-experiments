@@ -8,7 +8,7 @@
 (defparameter numbers (make-solution-candidate
 		       :operators '()
 		       :numbers '(1 2 3 4 5 6 7 8 9 10)))
-(defparameter ops `(,(function +) ,(function -) ,(function *) ,(function /)))
+(defparameter ops (list (function +) (function -) (function *) (function /)))
 
 ; returns true if solution candidate was fully search (e.g. numbers is a list of 1 element)
 (defun evaluated-solution-candidate? (s)
