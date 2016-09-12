@@ -17,40 +17,33 @@
 (defun eval-operator (operator num1 num2)
   (funcall operator num1 num2))
 
-(defun get-evaluator (num1 num2)
+(defun get-evaluator (solution-candidate)
   (lambda (operator)
-    (cons operator (eval-operator operator num1 num2))))
+    (make-solution-candidate
+     :numbers (cons (eval-operator operator
+				   (car (solution-candidate-numbers solution-candidate))
+				   (cadr (solution-candidate-numbers solution-candidate)))
+		    (cddr (solution-candidate-numbers solution-candidate)))
+     :operators (cons operator
+		      (solution-candidate-operators solution-candidate)))))
 
-(defun make-solution-candidates-from-partial-results (nums operators partial-results)
-  (map 'list
-       (lambda (result)
-	 (make-solution-candidate :numbers (cons (cdr result)
-						 (cddr nums))
-				  :operators (cons (car result)
-						   operators)))
-       partial-results))
-
-(defun apply-all-operators-to-first-two-numbers (nums)
+(defun apply-all-operators-to-first-two-numbers (solution-candidate)
   (map 'list
        (get-evaluator
-	(car nums)
-	(cadr nums))
+	solution-candidate)
        ops))
 
-(defun correct-solution? (result)
-  (= result 2016))
+(defun correct-solution? (candidate)
+  (= (car (solution-candidate-numbers candidate)) 2016))
 
 (defun get-results-from-permutations (solution-candidate)
-  (let ((nums (solution-candidate-numbers solution-candidate))
-	(operators (solution-candidate-operators solution-candidate)))
-    (cond ((evaluated-solution-candidate? solution-candidate)
-	   (if (correct-solution? (car nums))
-	       solution-candidate))
-	  (T (map 'list
-		  #'get-results-from-permutations	   
-		  (make-solution-candidates-from-partial-results nums
-								 operators
-								 (apply-all-operators-to-first-two-numbers nums)))))))
+  (declare (optimize speed))
+  (cond ((evaluated-solution-candidate? solution-candidate)
+	 (if (correct-solution? solution-candidate)
+	     solution-candidate))
+	(T (map 'list
+		#'get-results-from-permutations	   
+		(apply-all-operators-to-first-two-numbers solution-candidate)))))
 
 (defun flatten (l)
   (cond ((null l) nil)
