@@ -1,6 +1,8 @@
 ;; this lisp program solves the following interesting (programming) task:
 ;; http://nbviewer.ipython.org/url/norvig.com/ipython/Countdown.ipynb
 
+(declaim (optimize (speed 3) (safety 0) (space 0) (debug 0)))
+
 (defstruct solution-candidate ; example contents of struct fields...
   (numbers)              ; '(1 2 3 4 5 6 7 8 9 10)
   (operators))           ; '(+ + + + - / * + - *)
@@ -17,33 +19,36 @@
 (defun eval-operator (operator num1 num2)
   (funcall operator num1 num2))
 
-(defun get-evaluator (solution-candidate)
+(defun get-evaluator (candidate)
+  (declare (type solution-candidate candidate))
   (lambda (operator)
     (make-solution-candidate
      :numbers (cons (eval-operator operator
-				   (car (solution-candidate-numbers solution-candidate))
-				   (cadr (solution-candidate-numbers solution-candidate)))
-		    (cddr (solution-candidate-numbers solution-candidate)))
+				   (car (solution-candidate-numbers candidate))
+				   (cadr (solution-candidate-numbers candidate)))
+		    (cddr (solution-candidate-numbers candidate)))
      :operators (cons operator
-		      (solution-candidate-operators solution-candidate)))))
+		      (solution-candidate-operators candidate)))))
 
-(defun apply-all-operators-to-first-two-numbers (solution-candidate)
+(defun apply-all-operators-to-first-two-numbers (candidate)
+  (declare (type solution-candidate candidate))
   (map 'list
        (get-evaluator
-	solution-candidate)
+	candidate)
        ops))
 
 (defun correct-solution? (candidate)
+  (declare (type solution-candidate candidate))
   (= (car (solution-candidate-numbers candidate)) 2016))
 
-(defun get-results-from-permutations (solution-candidate)
-  (declare (optimize speed))
-  (cond ((evaluated-solution-candidate? solution-candidate)
-	 (if (correct-solution? solution-candidate)
-	     solution-candidate))
+(defun get-results-from-permutations (candidate)
+  (declare (type solution-candidate candidate))
+  (cond ((evaluated-solution-candidate? candidate)
+	 (if (correct-solution? candidate)
+	     candidate))
 	(T (map 'list
 		#'get-results-from-permutations	   
-		(apply-all-operators-to-first-two-numbers solution-candidate)))))
+		(apply-all-operators-to-first-two-numbers candidate)))))
 
 (defun flatten (l)
   (cond ((null l) nil)
