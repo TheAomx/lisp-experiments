@@ -57,9 +57,30 @@
         ((atom l) (list l))
         (t (loop for a in l appending (flatten a)))))
 
+(defun print-solution (nums solution)
+  (labels ((print-solution-part (nums ops)
+	     (when (not (null nums))
+	       (print (car ops))
+	       (print (car nums))
+	       (print-solution-part (cdr nums) (cdr ops)))))
+    (print (car nums))
+    (print-solution-part
+     (cdr nums)
+     (reverse (solution-candidate-operators solution)))))
+
+(defun print-solutions (nums solutions)
+  (let ((solution-printer (let ((counter 1))
+			    (lambda (solution)
+			      (format t "Solution ~D is: ~%" counter)
+			      (print-solution nums solution)
+			      (format t "~%")
+			      (setf counter (1+ counter))))))
+    (mapc solution-printer solutions)))
+
 ; example call to get solutions...
 
-(flatten (get-results-from-permutations
- (make-solution-candidate
-  :operators '()
-  :numbers '(1 2 3 4 5 6 7 8 9 10))))
+(let ((nums '(1 2 3 4 5 6 7 8 9 10)))
+  (print-solutions nums
+		   (flatten (get-results-from-permutations
+			     (make-solution-candidate
+			      :numbers nums)))))
